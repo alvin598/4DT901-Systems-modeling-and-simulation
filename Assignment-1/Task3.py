@@ -61,22 +61,34 @@ clusters = [("C1_Media", C1_Media), ("C2_AI", C2_Ai), ("C3_Database", C3_Databas
 fig, axes = plt.subplots(3, 2, figsize=(10, 9))
 
 for i, (name, cluster_data) in enumerate(clusters):
-    arrivals = cluster_data[:, 0]   # column 0 = arrival time
+    arrivals = cluster_data[:, 0]   # column 0 = interarrival time
     services = cluster_data[:, 1]   # column 1 = service time
     bin_count = math.ceil(math.sqrt(len(cluster_data)))
 
-    axes[i, 0].hist(arrivals, bins=bin_count)
+    # Erlang shape parameter k = (mean^2) / variance, only for service since all interarrival passed ks test for exponential distribution
+    k = max(1, round(services.mean() ** 2 / services.var()))
+
+    # plot histograms and fitted distributions
+    axes[i, 0].hist(arrivals, bins=bin_count, density=True)
     axes[i, 0].set_title(f"{name} – interarrival")
+    x = np.linspace(0, arrivals.max(), 400)
+    axes[i, 0].plot(x, stats.expon.pdf(x, scale=arrivals.mean()), "r-")
 
-    axes[i, 1].hist(services, bins=bin_count)
+    
+    axes[i, 1].hist(services, bins=bin_count, density=True)
     axes[i, 1].set_title(f"{name} – service time")
-
+    x = np.linspace(0, services.max(), 400)
+    axes[i, 1].plot(x, stats.expon.pdf(x, scale=services.mean()), "r-")
+    axes[i, 1].plot(x, stats.erlang.pdf(x, a=k, scale=services.mean() / k), "g--")
 
     inter_arrival = (cluster_data[:, 0])   # gaps between consecutive arrivals
     services = cluster_data[:, 1]
 
+    # KS test for goodness of fit
     p_arr = stats.kstest(inter_arrival, "expon", args=(0, inter_arrival.mean())).pvalue
     p_srv = stats.kstest(services, "expon", args=(0, services.mean())).pvalue
-    print(name, p_arr, p_srv)
+    p_srv_erl = stats.kstest(services, "erlang", args=(k, 0, services.mean() / k)).pvalue
+    print(name, p_arr, p_srv, "| erlang k:", k, p_srv_erl)
 
+plt.tight_layout()
 plt.show()
