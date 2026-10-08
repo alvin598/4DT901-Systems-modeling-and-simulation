@@ -88,7 +88,11 @@ for i, (name, cluster_data) in enumerate(clusters):
     p_arr = stats.kstest(inter_arrival, "expon", args=(0, inter_arrival.mean())).pvalue
     p_srv = stats.kstest(services, "expon", args=(0, services.mean())).pvalue
     p_srv_erl = stats.kstest(services, "erlang", args=(k, 0, services.mean() / k)).pvalue
-    print(name, p_arr, p_srv, "| erlang k:", k, p_srv_erl)
+    print(
+        f"{name}: Exponential: "
+        f"Interarrival: {p_arr}, Service: {p_srv}"
+    )
+    print(f"{name}: Erlang (k={k}): Service: {p_srv_erl}")
 
 plt.tight_layout()
 plt.show()
