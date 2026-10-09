@@ -67,15 +67,22 @@ for i, (name, cluster_data) in enumerate(clusters):
     # Erlang shape parameter k = (mean^2) / variance, only for service since all interarrival passed ks test for exponential distribution
     k = max(1, round(services.mean() ** 2 / services.var()))
 
-    # plot histograms and fitted distributions
+    # plot histograms
     axes[i, 0].hist(arrivals, bins=bin_count, density=True)
-    axes[i, 0].set_title(f"{name} – interarrival")
+    axes[i, 0].set_title(f"{name} - interarrival")
+
+    # plot the probability distrubutions for erlang and exponential pdf
     x = np.linspace(0, arrivals.max(), 400)
     axes[i, 0].plot(x, stats.expon.pdf(x, scale=arrivals.mean()), "r-")
 
-    
+    # do the same for service time
     axes[i, 1].hist(services, bins=bin_count, density=True)
-    axes[i, 1].set_title(f"{name} – service time")
+    axes[i, 1].set_title(f"{name} - service time")
+
+    # plot the probability distrubutions for erlang and exponential pdf
+    x = np.linspace(0, arrivals.max(), 400)
+    axes[i, 1].plot(x, stats.expon.pdf(x, scale=arrivals.mean()), "r-")
+    axes[i, 1].plot(x, stats.erlang.pdf(x, a=k, scale=arrivals.mean() / k), "g-")
 
 
     inter_arrival = (cluster_data[:, 0])
