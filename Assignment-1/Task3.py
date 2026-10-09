@@ -57,11 +57,13 @@ C3_Database = np.array(C3_Database)
 
 clusters = [("C1_Media", C1_Media), ("C2_AI", C2_Ai), ("C3_Database", C3_Database)]
 
-fig, axes = plt.subplots(3, 2, figsize=(10, 9))
+fig, axes = plt.subplots(3, 2, figsize=(11, 9))
 
-# plot all three cluster's pdf for both arrival time and service time
+statistics = []
+
+# plot all three cluster in a hist with different pdf for both arrival time and service time
 for i, (name, cluster_data) in enumerate(clusters):
-    inter_arrival = cluster_data[:, 0]
+    inter_arrival = cluster_data[1:, 0]
     services = cluster_data[:, 1]
     bin_count = math.ceil(math.sqrt(len(cluster_data)))
 
@@ -70,7 +72,7 @@ for i, (name, cluster_data) in enumerate(clusters):
 
     # plot histograms
     axes[i, 0].hist(inter_arrival, bins=bin_count, density=True)
-    axes[i, 0].set_title(f"{name} - interarrival")
+    
 
     # plot the probability distrubutions for erlang and exponential pdf
     x = np.linspace(0, inter_arrival.max(), 400)
@@ -78,7 +80,7 @@ for i, (name, cluster_data) in enumerate(clusters):
 
     # do the same for service time
     axes[i, 1].hist(services, bins=bin_count, density=True)
-    axes[i, 1].set_title(f"{name} - service time")
+    
 
     # plot the probability distrubutions for erlang and exponential pdf
     x = np.linspace(0, services.max(), 400)
@@ -89,12 +91,23 @@ for i, (name, cluster_data) in enumerate(clusters):
     # KS test for goodness of fit
     p_arr = stats.kstest(inter_arrival, "expon", args=(0, inter_arrival.mean())).pvalue
     p_srv = stats.kstest(services, "expon", args=(0, services.mean())).pvalue
-    p_srv_erl = stats.kstest(services, "erlang", args=(k, 0, services.mean() / k)).pvalue
-    print(
-        f"{name}: Exponential: "
-        f"Interarrival: {p_arr}, Service: {p_srv}"
-    )
-    print(f"{name}: Erlang (k={k}): Service: {p_srv_erl}")
+    p_srv_erl = stats.kstest(services, "gamma", args=(k, 0, services.mean() / k)).pvalue
 
-plt.legend()
+    axes[i, 0].set_title(f"{name} - service time Exponential: {p_arr:.2f}")
+    axes[i, 1].set_title(f"{name} - interarrival Exponential: {p_srv:.2f}.\nErlang (k={k}): Service: {p_srv_erl:.2f}")
+
+    statistics.append({
+        "cluster": name,
+        "n_requests": len(services),
+        "mean_interarrival": inter_arrival.mean(),
+        "std_interarrival": inter_arrival.std(ddof=1),
+        "var_interarrival": inter_arrival.var(ddof=1),
+        "mean_service_time": services.mean(),
+        "std_service_time": services.std(ddof=1),
+        "var_service_time": services.var(ddof=1)
+    }) 
+
+# create a pandas dataframe and print the 
+statistics_table = pd.DataFrame(statistics).set_index("cluster")
+print(statistics_table.round(4))
 plt.show()
