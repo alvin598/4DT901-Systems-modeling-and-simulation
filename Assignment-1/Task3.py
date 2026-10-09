@@ -91,7 +91,7 @@ for i, (name, cluster_data) in enumerate(clusters):
     # KS test for goodness of fit
     p_arr = stats.kstest(inter_arrival, "expon", args=(0, inter_arrival.mean())).pvalue
     p_srv = stats.kstest(services, "expon", args=(0, services.mean())).pvalue
-    p_srv_erl = stats.kstest(services, "gamma", args=(k, 0, services.mean() / k)).pvalue
+    p_srv_erl = stats.kstest(services, "erlang", args=(k, 0, services.mean() / k)).pvalue
 
     axes[i, 0].set_title(f"{name} - service time Exponential: {p_arr:.2f}")
     axes[i, 1].set_title(f"{name} - interarrival Exponential: {p_srv:.2f}.\nErlang (k={k}): Service: {p_srv_erl:.2f}")
