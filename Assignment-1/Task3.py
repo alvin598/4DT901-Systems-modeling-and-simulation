@@ -110,4 +110,5 @@ for i, (name, cluster_data) in enumerate(clusters):
 # create a pandas dataframe and print the 
 statistics_table = pd.DataFrame(statistics).set_index("cluster")
 print(statistics_table.round(4))
+print(f"\nNetwork Gateway mean latency = {network_latencies_min.mean():.4f} min")
 plt.show()
