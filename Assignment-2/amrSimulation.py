@@ -16,14 +16,16 @@ class AmrSimulation:
         Parameters:
         - arrival_rate: Poisson arrival rate in AMRs per hour -> Mean interarrival = 60/45 minutes
         - buffer_capacity: Max buffer size = 3 (Total max capacity per station = 1 serving + 3 buffer = 4)
-        - sim_duration: Simulation duration in minutes
+        - sim_duration: Length of the data-collection phase T_E in minutes
         - seed: Random seed for reproducibility
+        - warmup: Length of the warm-up phase T0 in minutes (no statistics are kept before T0)
         """
         self.warmup = warmup
+        self.run_length = sim_duration  # T_E: the time the statistics are collected over
 
         self.mean_interarrival = 60.0 / arrival_rate
         self.max_capacity = 1 + buffer_capacity  # 1 in service + 3 in buffer = 4
-        self.sim_duration = sim_duration + self.warmup
+        self.sim_duration = sim_duration + self.warmup  # the run ends at T0 + T_E
 
         random.seed(seed)
 
@@ -376,14 +378,16 @@ class AmrSimulation:
         self.report()
 
     def report(self):
-        """Generates performance report."""
-        per_hour = 60.0 / self.sim_time
+        """Generates performance report over the data-collection phase T_E."""
+        te = self.run_length
+        per_hour = 60.0 / te
         total_redirected = self.redirected_s1 + self.redirected_s2 + self.redirected_s3
 
         print("=" * 70)
         print("SIMULATION REPORT: ROBOTIC MAINTENANCE HUB")
         print("=" * 70)
-        print(f"Simulation Duration:              {self.sim_duration:.1f} min ({self.sim_duration/60:.1f} hours)")
+        print(f"Warm-up Period (T0):              {self.warmup:.1f} min (excluded from the statistics)")
+        print(f"Data Collection (T_E):            {te:.1f} min ({te/60:.1f} hours)")
         print(f"Total AMRs Arrived:               {self.total_arrivals}")
         print(f"AMRs Completed in Hub:            {self.hub_completed}")
         print(f"Throughput:                       {self.hub_completed * per_hour:.4f} AMRs/hour")
@@ -400,8 +404,8 @@ class AmrSimulation:
                 ("S3", self.area_s3, self.area_q3, self.total_delay_s3, self.s3_started, self.s3_completed)):
             print("-" * 70)
             print(f"WORKSTATION {name} PERFORMANCE:")
-            print(f"  - Utilization:                  {area_s / self.sim_time * 100:.2f}%")
-            print(f"  - Avg Queue Length:             {area_q / self.sim_time:.4f} AMRs")
+            print(f"  - Utilization:                  {area_s / te * 100:.2f}%")
+            print(f"  - Avg Queue Length:             {area_q / te:.4f} AMRs")
             print(f"  - Avg Wait in Buffer:           {delay / started if started > 0 else 0.0:.4f} minutes")
             print(f"  - Completed AMRs:               {completed}")
 
