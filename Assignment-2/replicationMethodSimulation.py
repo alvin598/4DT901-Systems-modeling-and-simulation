@@ -145,7 +145,7 @@ class ReplicationMethodSimulation:
 
     def end_warmup(self):
         """End of warm-up event: discards the statistics collected in [0, T0). The system state is kept."""
-        self.time_end_warmup = float('inf')  # disable warmup event
+        self.time_end_warmup = float('inf')  # disable warmup event after one have occurred
 
         self.total_arrivals = 0
 
