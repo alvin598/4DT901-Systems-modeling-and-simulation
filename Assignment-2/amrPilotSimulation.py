@@ -308,7 +308,7 @@ class AmrPilotSimulation:
 
 
 def ensemble_average(replications, column):
-    """Ensemble average and 95% CI of one column for every interval"""
+    # Ensemble average and 95% CI of one column for every interval
     averages, lows, highs = [], [], []
     for k in range(len(replications[0])):
         values = [intervals[k][column] for intervals in replications
@@ -322,7 +322,7 @@ def ensemble_average(replications, column):
 
 
 if __name__ == "__main__":
-    # list of random seeds (0-1000) of size R
+    # list of random seeds of size R
     seeds = random.sample(range(1000), R)
 
     replications = []
@@ -332,7 +332,7 @@ if __name__ == "__main__":
         replications.append(sim.intervals)
 
     # Save the raw data: one row per replication and interval
-    output_path = "pilot_results"
+    output_path = "experiment_results"
 
     os.makedirs(output_path, exist_ok=True)
     with open(os.path.join(output_path, "pilot_raw_data.csv"), "w", newline="") as f:
@@ -345,12 +345,11 @@ if __name__ == "__main__":
             for row in intervals:
                 writer.writerow([r + 1, seeds[r]] + row)
 
-    stations = ["S1", "S2", "S3"]
     measures = ["utilization", "number in queue (AMRs)", "wait in buffer (min)"]
 
     # calculate the ensemble average and 95% CI for every station
     results = {}
-    for i, station in enumerate(stations):
+    for i, station in enumerate(["S1", "S2", "S3"]):
         for m, measure in enumerate(measures):
             column = 1 + 3 * m + i  # position of this station and measure in a row
             results[(station, measure)] = ensemble_average(replications, column)
@@ -360,7 +359,7 @@ if __name__ == "__main__":
     middles = [start + INTERVAL / 2 for start in starts]
 
     fig, axes = plt.subplots(3, 3, figsize=(13, 9), sharex=True)
-    for i, station in enumerate(stations):
+    for i, station in enumerate(["S1", "S2", "S3"]):
         for m, measure in enumerate(measures):
             averages, lows, highs = results[(station, measure)]
             ax = axes[i][m]

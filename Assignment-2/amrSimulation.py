@@ -1,31 +1,25 @@
-# -*- coding: utf-8 -*-
-"""[4DV650] Assignment 2: Robotic Maintenance Hub simulation
-
-The structure is based on the example S2 [Code] Simulation_validation.py.
-
+""" 
+Maintenance Hub simulation
+The structure of the simulation is based on the example S2 [Code] Simulation_validation.py.
 """
 
 import math
 import random
 
 class AmrSimulation:
-    def __init__(self, arrival_rate=45.0, buffer_capacity=3, sim_duration=100000.0, seed=42, warmup=0.0):
+    def __init__(self, arrival_rate=45.0, buffer_capacity=3, sim_duration=100000.0, seed=42):
         """
         Simulation of the Robotic Maintenance Hub.
 
         Parameters:
         - arrival_rate: Poisson arrival rate in AMRs per hour -> Mean interarrival = 60/45 minutes
         - buffer_capacity: Max buffer size = 3 (Total max capacity per station = 1 serving + 3 buffer = 4)
-        - sim_duration: Length of the data-collection phase T_E in minutes
+        - sim_duration: Simulation duration in minutes
         - seed: Random seed for reproducibility
-        - warmup: Length of the warm-up phase T0 in minutes (no statistics are kept before T0)
         """
-        self.warmup = warmup
-        self.run_length = sim_duration  # T_E: the time the statistics are collected over
-
         self.mean_interarrival = 60.0 / arrival_rate
         self.max_capacity = 1 + buffer_capacity  # 1 in service + 3 in buffer = 4
-        self.sim_duration = sim_duration + self.warmup  # the run ends at T0 + T_E
+        self.sim_duration = sim_duration
 
         random.seed(seed)
 
@@ -45,7 +39,6 @@ class AmrSimulation:
         """Initialization Routine: Sets time, counters, and schedules 1st arrival."""
         self.sim_time = 0.0
         self.time_last_event = 0.0
-        self.time_end_warmup = self.warmup if self.warmup > 0.0 else float('inf')
 
         # System State Variables: AMRs at each station (serving + queue), the AMRs
         # in each buffer, and the AMR being served
@@ -118,10 +111,6 @@ class AmrSimulation:
             min_time = self.time_next_arrival
             next_event = 'arrival'
 
-        if self.time_end_warmup < min_time:
-            min_time = self.time_end_warmup
-            next_event = 'end_warmup'
-
         self.sim_time = min_time
         return next_event
 
@@ -157,45 +146,6 @@ class AmrSimulation:
         self.hub_completed += 1
         self.total_delay_hub += amr['total_delay']
         self.total_time_in_hub += self.sim_time - amr['hub_arrival']
-
-
-    def end_warmup(self):
-        """Ends the warmup for the steady-state simulation."""
-        self.time_end_warmup = float('inf')  # disable warmup event
-
-        self.total_arrivals = 0
-        self.s1_arrivals = 0
-        self.s2_arrivals = 0
-        self.s3_arrivals = 0
-
-        self.redirected_s1 = 0
-        self.redirected_s2 = 0
-        self.redirected_s3 = 0
-
-        self.s1_started = 0
-        self.s2_started = 0
-        self.s3_started = 0
-
-        self.s1_completed = 0
-        self.s2_completed = 0
-        self.s3_completed = 0
-
-        self.total_delay_s1 = 0.0
-        self.total_delay_s2 = 0.0
-        self.total_delay_s3 = 0.0
-
-        # AMRs that completed service in the hub. Redirected AMRs are not included.
-        self.hub_completed = 0
-        self.total_delay_hub = 0.0
-        self.total_time_in_hub = 0.0
-
-        # Time-integrated accumulators for time-average queue length and utilization
-        self.area_q1 = 0.0
-        self.area_q2 = 0.0
-        self.area_q3 = 0.0
-        self.area_s1 = 0.0
-        self.area_s2 = 0.0
-        self.area_s3 = 0.0
 
 # state transition methods
     def arrive_s1(self):
@@ -372,22 +322,18 @@ class AmrSimulation:
                 self.depart_s2()
             elif next_event == 'depart_s3':
                 self.depart_s3()
-            elif next_event == 'end_warmup':
-                self.end_warmup()
 
         self.report()
 
     def report(self):
-        """Generates performance report over the data-collection phase T_E."""
-        te = self.run_length
-        per_hour = 60.0 / te
+        """Generates performance report."""
+        per_hour = 60.0 / self.sim_time
         total_redirected = self.redirected_s1 + self.redirected_s2 + self.redirected_s3
 
         print("=" * 70)
         print("SIMULATION REPORT: ROBOTIC MAINTENANCE HUB")
         print("=" * 70)
-        print(f"Warm-up Period (T0):              {self.warmup:.1f} min (excluded from the statistics)")
-        print(f"Data Collection (T_E):            {te:.1f} min ({te/60:.1f} hours)")
+        print(f"Simulation Duration:              {self.sim_duration:.1f} min ({self.sim_duration/60:.1f} hours)")
         print(f"Total AMRs Arrived:               {self.total_arrivals}")
         print(f"AMRs Completed in Hub:            {self.hub_completed}")
         print(f"Throughput:                       {self.hub_completed * per_hour:.4f} AMRs/hour")
@@ -398,22 +344,24 @@ class AmrSimulation:
         print(f"  - At S3:                        {self.redirected_s3} ({self.redirected_s3 * per_hour:.4f} AMRs/hour)")
         print(f"  - Total:                        {total_redirected} ({total_redirected * per_hour:.4f} AMRs/hour)")
 
-        for name, area_s, area_q, delay, started, completed in (
-                ("S1", self.area_s1, self.area_q1, self.total_delay_s1, self.s1_started, self.s1_completed),
-                ("S2", self.area_s2, self.area_q2, self.total_delay_s2, self.s2_started, self.s2_completed),
-                ("S3", self.area_s3, self.area_q3, self.total_delay_s3, self.s3_started, self.s3_completed)):
+        # print for every station: utilization, average queue length, average wait in buffer, and completed AMRs
+        station_list = [("S1", self.area_s1, self.area_q1, self.total_delay_s1, self.s1_started, self.s1_completed),
+                        ("S2", self.area_s2, self.area_q2, self.total_delay_s2, self.s2_started, self.s2_completed),
+                        ("S3", self.area_s3, self.area_q3, self.total_delay_s3, self.s3_started, self.s3_completed)]
+
+        for name, area_s, area_q, delay, started, completed in (station_list):
             print("-" * 70)
             print(f"WORKSTATION {name} PERFORMANCE:")
-            print(f"  - Utilization:                  {area_s / te * 100:.2f}%")
-            print(f"  - Avg Queue Length:             {area_q / te:.4f} AMRs")
+            print(f"  - Utilization:                  {area_s / self.sim_time * 100:.2f}%")
+            print(f"  - Avg Queue Length:             {area_q / self.sim_time:.4f} AMRs")
             print(f"  - Avg Wait in Buffer:           {delay / started if started > 0 else 0.0:.4f} minutes")
             print(f"  - Completed AMRs:               {completed}")
 
+        # print for all stations in the hub: average total wait and average time in hub
         print("-" * 70)
         print("OVERALL, FOR AMRs THAT COMPLETED SERVICE IN THE HUB:")
-        if self.hub_completed > 0:
-            print(f"  - Avg Total Wait:               {self.total_delay_hub / self.hub_completed:.4f} minutes")
-            print(f"  - Avg Time in Hub:              {self.total_time_in_hub / self.hub_completed:.4f} minutes")
+        print(f"  - Avg Total Wait:               {self.total_delay_hub / self.hub_completed:.4f} minutes")
+        print(f"  - Avg Time in Hub:              {self.total_time_in_hub / self.hub_completed:.4f} minutes")
         print("=" * 70)
 
 if __name__ == "__main__":
