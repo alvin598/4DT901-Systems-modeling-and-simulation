@@ -9,7 +9,7 @@ import math
 import random
 
 class AmrSimulation:
-    def __init__(self, arrival_rate=45.0, buffer_capacity=3, sim_duration=100000.0, seed=42):
+    def __init__(self, arrival_rate=45.0, buffer_capacity=3, sim_duration=100000.0, seed=42, warmup=0.0):
         """
         Simulation of the Robotic Maintenance Hub.
 
@@ -19,9 +19,11 @@ class AmrSimulation:
         - sim_duration: Simulation duration in minutes
         - seed: Random seed for reproducibility
         """
+        self.warmup = warmup
+
         self.mean_interarrival = 60.0 / arrival_rate
         self.max_capacity = 1 + buffer_capacity  # 1 in service + 3 in buffer = 4
-        self.sim_duration = sim_duration
+        self.sim_duration = sim_duration + self.warmup
 
         random.seed(seed)
 
@@ -41,6 +43,7 @@ class AmrSimulation:
         """Initialization Routine: Sets time, counters, and schedules 1st arrival."""
         self.sim_time = 0.0
         self.time_last_event = 0.0
+        self.time_end_warmup = self.warmup if self.warmup > 0.0 else float('inf')
 
         # System State Variables: AMRs at each station (serving + queue), the AMRs
         # in each buffer, and the AMR being served
@@ -113,6 +116,10 @@ class AmrSimulation:
             min_time = self.time_next_arrival
             next_event = 'arrival'
 
+        if self.time_end_warmup < min_time:
+            min_time = self.time_end_warmup
+            next_event = 'end_warmup'
+
         self.sim_time = min_time
         return next_event
 
@@ -148,6 +155,45 @@ class AmrSimulation:
         self.hub_completed += 1
         self.total_delay_hub += amr['total_delay']
         self.total_time_in_hub += self.sim_time - amr['hub_arrival']
+
+
+    def end_warmup(self):
+        """Ends the warmup for the steady-state simulation."""
+        self.time_end_warmup = float('inf')  # disable warmup event
+
+        self.total_arrivals = 0
+        self.s1_arrivals = 0
+        self.s2_arrivals = 0
+        self.s3_arrivals = 0
+
+        self.redirected_s1 = 0
+        self.redirected_s2 = 0
+        self.redirected_s3 = 0
+
+        self.s1_started = 0
+        self.s2_started = 0
+        self.s3_started = 0
+
+        self.s1_completed = 0
+        self.s2_completed = 0
+        self.s3_completed = 0
+
+        self.total_delay_s1 = 0.0
+        self.total_delay_s2 = 0.0
+        self.total_delay_s3 = 0.0
+
+        # AMRs that completed service in the hub. Redirected AMRs are not included.
+        self.hub_completed = 0
+        self.total_delay_hub = 0.0
+        self.total_time_in_hub = 0.0
+
+        # Time-integrated accumulators for time-average queue length and utilization
+        self.area_q1 = 0.0
+        self.area_q2 = 0.0
+        self.area_q3 = 0.0
+        self.area_s1 = 0.0
+        self.area_s2 = 0.0
+        self.area_s3 = 0.0
 
 # state transition methods
     def arrive_s1(self):
@@ -324,6 +370,8 @@ class AmrSimulation:
                 self.depart_s2()
             elif next_event == 'depart_s3':
                 self.depart_s3()
+            elif next_event == 'end_warmup':
+                self.end_warmup()
 
         self.report()
 
