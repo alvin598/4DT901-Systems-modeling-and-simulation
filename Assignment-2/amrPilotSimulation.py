@@ -1,4 +1,4 @@
-"""Pilot experiment for choosing the warm T0 variable"""
+"""Pilot experiment for choosing the warm-up T0 variable"""
 
 import csv
 import math

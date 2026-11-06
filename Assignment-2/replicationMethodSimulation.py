@@ -1,4 +1,4 @@
-"""Main experiment: R replications of the hub with the warm-up T0 from the pilot experiment"""
+"""R replications of the hub with the warm-up T0 from the pilot experiment"""
 
 import csv
 import math

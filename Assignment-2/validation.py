@@ -1,9 +1,5 @@
-"""Validation: one-factor-at-a-time (OFAT) sensitivity analysis of the hub model
-
-The arrival rate is moved below and above its baseline value (45 AMRs per hour) while all
-other inputs stay at their baseline values (S2 Handout, slide 9; S2 Reading, Sec. 5.4.4,
-pp. 260-261, Example 5.24). Every setting uses the same seeds (common random numbers,
-S2 Reading, p. 261), so a change in the output is due to the arrival rate only.
+"""
+Validation: one-factor-at-a-time (OFAT) sensitivity analysis of the hub model
 """
 
 import csv
@@ -48,7 +44,6 @@ if __name__ == "__main__":
 
     # we print the following measures: redirected_total_per_minute, throughput_per_minute, utilization_s2, wait_s2, time_in_hub
     # since these measure are relevant and can be predicted what changes we will expect.
-
 
     for measure in ["redirected_total_per_minute", "throughput_per_minute",
          "utilization_s2", "wait_s2", "time_in_hub"]:
