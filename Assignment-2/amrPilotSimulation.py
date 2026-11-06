@@ -12,7 +12,6 @@ from scipy import stats
 R = 20              # number of replications
 RUN_LENGTH = 3000.0  # minutes per replication
 INTERVAL = 30.0     # length of one recording interval in minutes
-FIRST_SEED = 1001   # seeds 1001..1020, so these runs are independent of the main experiment
 
 
 class AmrPilotSimulation:
@@ -309,8 +308,7 @@ class AmrPilotSimulation:
 
 
 def ensemble_average(replications, column):
-    """Ensemble average and 95% CI of one column for every interval, over all
-    replications (S3 Reading, Sec. 5.1, pp. 22-24). Returns (averages, lows, highs)."""
+    """Ensemble average and 95% CI of one column for every interval"""
     averages, lows, highs = [], [], []
     for k in range(len(replications[0])):
         values = [intervals[k][column] for intervals in replications
@@ -324,9 +322,12 @@ def ensemble_average(replications, column):
 
 
 if __name__ == "__main__":
+    # list of random seeds (0-1000) of size R
+    seeds = random.sample(range(1000), R)
+
     replications = []
     for r in range(R):
-        sim = AmrPilotSimulation(seed=FIRST_SEED + r)
+        sim = AmrPilotSimulation(seed=seeds[r])
         sim.run()
         replications.append(sim.intervals)
 
@@ -342,13 +343,13 @@ if __name__ == "__main__":
                          "wait_s1", "wait_s2", "wait_s3"])
         for r, intervals in enumerate(replications):
             for row in intervals:
-                writer.writerow([r + 1, FIRST_SEED + r] + row)
+                writer.writerow([r + 1, seeds[r]] + row)
 
     stations = ["S1", "S2", "S3"]
     measures = ["utilization", "number in queue (AMRs)", "wait in buffer (min)"]
 
-    # calculate the ensemble average and 95% CI for every station and measure
-    results = {}  # results[(station, measure)] = (averages, lows, highs)
+    # calculate the ensemble average and 95% CI for every station
+    results = {}
     for i, station in enumerate(stations):
         for m, measure in enumerate(measures):
             column = 1 + 3 * m + i  # position of this station and measure in a row
