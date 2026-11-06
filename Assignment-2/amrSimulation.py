@@ -158,7 +158,7 @@ class AmrSimulation:
         self.time_next_arrival = self.sim_time + self.expon(self.mean_interarrival)
 
         if self.num_in_s1 >= self.max_capacity:
-            # S1 full -> Redirect to the depot
+            # if s1 is full, redirect to the depot
             self.redirected_s1 += 1
             return
 
@@ -166,10 +166,10 @@ class AmrSimulation:
         self.s1_arrivals += 1
         self.num_in_s1 += 1
         if self.num_in_s1 == 1:
-            # S1 is idle -> start service immediately
+            # if s1 is idle, start service immediately
             self.start_s1(amr)
         else:
-            # S1 busy but buffer available -> join S1 buffer
+            # if s1 is busy but buffer available, join the buffer
             self.join_buffer(self.q_s1, amr)
 
     def start_s1(self, amr):
@@ -201,7 +201,7 @@ class AmrSimulation:
     def arrive_s2(self, amr):
         """Arrive S2: Starts the AMR, places it in the buffer, or redirects it."""
         if self.num_in_s2 >= self.max_capacity:
-            # S2 full -> Redirect to the depot
+            # if s2 is full, redirect to the depot
             self.redirected_s2 += 1
             return
 
@@ -262,17 +262,17 @@ class AmrSimulation:
     def arrive_s3(self, amr):
         """Arrive S3: Starts the AMR, places it in the buffer, or redirects it."""
         if self.num_in_s3 >= self.max_capacity:
-            # S3 full -> Redirect to the depot
+            # if s3 is full, redirect to the depot
             self.redirected_s3 += 1
             return
 
         self.s3_arrivals += 1
         self.num_in_s3 += 1
         if self.num_in_s3 == 1:
-            # S3 is idle -> start service immediately
+            # if s3 is idle, start service immediately
             self.start_s3(amr)
         else:
-            # S3 busy but buffer available -> join S3 buffer
+            # if s3 is busy but buffer available, join the buffer
             self.join_buffer(self.q_s3, amr)
 
     def start_s3(self, amr):
